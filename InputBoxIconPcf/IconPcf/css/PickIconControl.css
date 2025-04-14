@@ -1,0 +1,29 @@
+.pi-input {
+  padding-right: 36px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  height: 32px;
+  line-height: 32px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.pi-icon {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #eef1f6;
+  color: #2b579a; /* Power Platform blue */
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  pointer-events: none;
+  font-size: 14px;
+}
+
+div {
+  position: relative;
+}
