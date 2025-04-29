@@ -3,6 +3,36 @@ import {
   IChoiceGroupOption,
 } from '@fluentui/react/lib/ChoiceGroup';
 import * as React from 'react';
+import { Dropdown, IDropdownOption } from '@fluentui/react/lib/Dropdown';
+import { Icon } from '@fluentui/react/lib/Icon';
+
+const iconStyles = { marginRight: '8px' };
+
+const onRenderOption = (option?: IDropdownOption): JSX.Element => {
+  if (option) {
+    return (
+      <div>
+        {option.data && option.data.icon && (
+          <Icon
+            style={iconStyles}
+            iconName={option.data.icon}
+            aria-hidden="true"
+            title={option.data.icon}
+          />
+        )}
+        <span>{option.text}</span>
+      </div>
+    );
+  }
+  return <></>;
+};
+
+const onRenderTitle = (options?: IDropdownOption[]): JSX.Element => {
+  if (options) {
+    return onRenderOption(options[0]);
+  }
+  return <></>;
+};
 
 export interface ChoicesPickerComponentProps {
   label: string;
@@ -10,11 +40,23 @@ export interface ChoicesPickerComponentProps {
   options: ComponentFramework.PropertyHelper.OptionMetadata[];
   configuration: string | null;
   onChange: (newValue: number | undefined) => void;
+  disabled: boolean;
+  masked: boolean;
+  formFactor: 'small' | 'large';
 }
 
 export const ChoicesPickerComponent = React.memo(
   (props: ChoicesPickerComponentProps) => {
-    const { label, value, options, configuration, onChange } = props;
+    const {
+      label,
+      value,
+      options,
+      configuration,
+      onChange,
+      disabled,
+      masked,
+      formFactor,
+    } = props;
     const valueKey = value != null ? value.toString() : undefined;
     const items = React.useMemo(() => {
       let iconMapping: Record<number, string> = {};
@@ -37,6 +79,13 @@ export const ChoicesPickerComponent = React.memo(
             iconProps: { iconName: iconMapping[item.Value] },
           } as IChoiceGroupOption;
         }),
+        options: options.map((item) => {
+          return {
+            key: item.Value.toString(),
+            data: { value: item.Value, icon: iconMapping[item.Value] },
+            text: item.Label,
+          } as IDropdownOption;
+        }),
       };
     }, [options, configuration]);
 
@@ -46,16 +95,39 @@ export const ChoicesPickerComponent = React.memo(
       },
       [onChange]
     );
+    const onChangeDropDown = React.useCallback(
+      (ev: unknown, option?: IDropdownOption): void => {
+        onChange(option ? (option.data.value as number) : undefined);
+      },
+      [onChange]
+    );
 
     return (
       <>
         {items.error}
-        <ChoiceGroup
-          label={label}
-          options={items.choices}
-          selectedKey={valueKey}
-          onChange={onChangeChoiceGroup}
-        />
+        {masked && '****'}
+        {formFactor == 'large' && !items.error && !masked && (
+          <ChoiceGroup
+            label={label}
+            options={items.choices}
+            selectedKey={valueKey}
+            onChange={onChangeChoiceGroup}
+            disabled={disabled}
+          />
+        )}
+        {formFactor == 'small' && !items.error && !masked && (
+          <Dropdown
+            placeholder={'---'}
+            label={label}
+            ariaLabel={label}
+            options={items.options}
+            selectedKey={valueKey}
+            disabled={disabled}
+            onRenderOption={onRenderOption}
+            onRenderTitle={onRenderTitle}
+            onChange={onChangeDropDown}
+          />
+        )}
       </>
     );
   }

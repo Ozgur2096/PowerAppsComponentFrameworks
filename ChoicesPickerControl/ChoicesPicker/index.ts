@@ -1,10 +1,20 @@
 import { IInputs, IOutputs } from './generated/ManifestTypes';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+//import { createRoot, Root } from 'react-dom/client';
 import { initializeIcons } from '@fluentui/react/lib/Icons';
 import { ChoicesPickerComponent } from './ChoicesPickerComponent';
 
 initializeIcons(undefined, { disableWarnings: true });
+
+const SmallFormFactorMaxWidth = 350;
+
+const enum FormFactors {
+  Unknown = 0,
+  Desktop = 1,
+  Tablet = 2,
+  Phone = 3,
+}
 
 export class ChoicesPicker
   implements ComponentFramework.StandardControl<IInputs, IOutputs>
@@ -13,6 +23,8 @@ export class ChoicesPicker
   rootContainer: HTMLDivElement;
   selectedValue: number | undefined;
   context: ComponentFramework.Context<IInputs>;
+  //root: Root;
+
   constructor() {
     // Empty
   }
@@ -34,6 +46,8 @@ export class ChoicesPicker
     this.notifyOutputChanged = notifyOutputChanged;
     this.rootContainer = container;
     this.context = context;
+    this.context.mode.trackContainerResize(true);
+    //this.root = createRoot(this.rootContainer);
   }
   onChange = (newValue: number | undefined): void => {
     this.selectedValue = newValue;
@@ -45,7 +59,15 @@ export class ChoicesPicker
    */
   public updateView(context: ComponentFramework.Context<IInputs>): void {
     const { value, configuration } = context.parameters;
+    let disabled = context.mode.isControlDisabled;
+    let masked = false;
+    if (value.security) {
+      disabled = disabled || !value.security.editable;
+      masked = !value.security.readable;
+    }
+
     if (value && value.attributes && configuration) {
+      //this.root.render(
       ReactDOM.render(
         React.createElement(ChoicesPickerComponent, {
           label: value.attributes.DisplayName,
@@ -53,6 +75,13 @@ export class ChoicesPicker
           configuration: configuration.raw,
           value: value.raw,
           onChange: this.onChange,
+          disabled: disabled,
+          masked: masked,
+          formFactor:
+            context.client.getFormFactor() == FormFactors.Phone ||
+            context.mode.allocatedWidth < SmallFormFactorMaxWidth
+              ? 'small'
+              : 'large',
         }),
         this.rootContainer
       );
@@ -72,6 +101,7 @@ export class ChoicesPicker
    * i.e. cancelling any pending remote calls, removing listeners, etc.
    */
   public destroy(): void {
-    // Add code to cleanup control if necessary
+    //this.root.unmount();
+    ReactDOM.unmountComponentAtNode(this.rootContainer);
   }
 }
